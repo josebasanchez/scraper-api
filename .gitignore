@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pycache/
+*.pyd
+
+# Virtualenv
+.venv/
+env/
+venv/
+ENV/
+
+# Database
+*.db
+*.sqlite3
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# Docker
+*.log
+*.pid
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python packages
+*.egg-info/
+dist/
+build/
+.eggs/
