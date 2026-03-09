@@ -9,19 +9,22 @@ from auth import login, verificar_token
 
 
 class ScrapRequestSchema(Schema):
-    domain = fields.String(required=True)
+    domain = fields.String(
+        required=True,
+        metadata={"example": "https://www.innotu.com"}
+    )
 
 
 class ScrapResponseSchema(Schema):
-    domain = fields.String(example="https://innotu.com")
-    total_urls = fields.Integer(example=25)
+    domain = fields.String(metadata={"example": "https://www.innotu.com"})
+    total_urls = fields.Integer(metadata={"example": 99})
     urls = fields.List(
         fields.String(),
-        example=[
-            "https://innotu.com/",
-            "https://innotu.com/contact",
-            "https://innotu.com/blog",
-        ],
+        metadata={"example": [
+            "https://www.innotu.com/",
+            "https://www.innotu.com/contact",
+            "https://www.innotu.com/blog"
+        ]}
     )
 
 
@@ -76,7 +79,7 @@ def url_segura(url):
 
 @blp.route("/getScrap", methods=["POST"])
 @blp.arguments(ScrapRequestSchema)
-@blp.response(200, ScrapResponseSchema, description="Scrap protegido con token")
+@blp.response(200, ScrapResponseSchema, description="Recibe un dominio, scrapea sus URLs y devuelve listado con timestamp. Requiere token Bearer en el header 'Authorization'.")
 @blp.doc(security=[{"BearerAuth": []}])
 def getScrap(data):
     token_header = request.headers.get("Authorization", "").strip()
