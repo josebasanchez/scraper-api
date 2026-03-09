@@ -1,13 +1,28 @@
-import secrets
-TOKENS = {}
-USERS = {
-    "admin": "admin123"  
-}
+import jwt
+import datetime
+
+SECRET_KEY = "super-secret-key"
+
 def login(user, password):
-    if USERS.get(user) == password:
-        token = secrets.token_hex(16)
-        TOKENS[token] = user
+    if user == "admin" and password == "admin123":
+        payload = {
+            "user": user,
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        }
+
+        token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+        if isinstance(token, bytes):
+            token = token.decode("utf-8")
         return token
+
     return None
+
+
 def verificar_token(token):
-    return token in TOKENS
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
