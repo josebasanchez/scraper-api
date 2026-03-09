@@ -5,14 +5,17 @@ from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 TIMEOUT = 10
-
 def normalizar(url):
     p = urlparse(url)
     return urlunparse((p.scheme, p.netloc, p.path.rstrip("/"), p.params, p.query, ""))
-
 def misma_web(url, base_url):
-    return urlparse(url).netloc == urlparse(base_url).netloc
-
+    u = urlparse(url).netloc.lower()
+    b = urlparse(base_url).netloc.lower()
+    if u.startswith("www."):
+        u = u[4:]
+    if b.startswith("www."):
+        b = b[4:]
+    return u == b
 def extraer_urls(url, base_url):
     urls = set()
     try:
@@ -29,7 +32,6 @@ def extraer_urls(url, base_url):
         if misma_web(url_abs, base_url):
             urls.add(normalizar(url_abs))
     return urls
-
 def scrapear(base_url, max_workers=10):
     visitadas = set()
     pendientes = set([base_url])
