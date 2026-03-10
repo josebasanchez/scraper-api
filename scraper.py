@@ -5,6 +5,9 @@ from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 TIMEOUT = 10
+session = requests.Session()
+session.headers.update(HEADERS)
+
 def normalizar(url):
     p = urlparse(url)
     return urlunparse((p.scheme, p.netloc, p.path.rstrip("/"), p.params, p.query, ""))
@@ -19,7 +22,7 @@ def misma_web(url, base_url):
 def extraer_urls(url, base_url):
     urls = set()
     try:
-        r = requests.get(url, timeout=TIMEOUT, headers=HEADERS)
+        r = session.get(url, timeout=TIMEOUT)
         r.raise_for_status()
     except:
         return urls
@@ -32,12 +35,12 @@ def extraer_urls(url, base_url):
         if misma_web(url_abs, base_url):
             urls.add(normalizar(url_abs))
     return urls
-def scrapear(base_url, max_workers=10):
+def scrapear(base_url, max_workers=50):
     visitadas = set()
     pendientes = set([base_url])
     resultado = []
     while pendientes:
-        batch = list(pendientes)
+        batch = [u for u in pendientes if u not in visitadas]
         pendientes.clear()
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_url = {executor.submit(extraer_urls, url, base_url): url for url in batch}
