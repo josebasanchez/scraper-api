@@ -16,7 +16,7 @@ def guardar_urls(domain, urls):
         host="localhost",
         user="root",
         password="",
-        database="scraper-api"
+        database="scraper_api"
     )
 
     cursor = conn.cursor()
@@ -26,7 +26,7 @@ def guardar_urls(domain, urls):
     VALUES (%s,%s,%s,%s)
     """
 
-    valores = [(domain, u["url"], u["tipo"], u["timestamp"]) for u in urls]
+    valores = [(domain, u["tipo"], u["url"], u["timestamp"]) for u in urls]
 
     cursor.executemany(sql, valores)
 
@@ -92,10 +92,11 @@ def scrapear(base_url, max_workers=50):
                 url_base_n = normalizar(url_base)
                 if url_base_n not in visitadas:
                     visitadas.add(url_base_n)
+                    iso_ts = datetime.now(timezone.utc).isoformat()
                     resultado.append({
                         "url": url_base_n,
                         "tipo": detectar_tipo(url_base_n),
-                        "timestamp": datetime.now(timezone.utc).isoformat()
+                        "timestamp": datetime.fromisoformat(iso_ts).strftime("%Y-%m-%d %H:%M:%S")
                     })
                 try:
                     nuevas = future.result()
