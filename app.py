@@ -1,11 +1,16 @@
 from flask import Flask, request
 from flask_smorest import Api, Blueprint
+from flask_swagger_ui import get_swaggerui_blueprint
 from urllib.parse import urlparse
 from scraper import scrapear
-from models import db, UrlScrape
 from datetime import datetime
 from marshmallow import Schema, fields
 from auth import login, verificar_token
+from db_mysql import crear_db
+from scraper import guardar_urls
+
+crear_db()
+
 class ScrapRequestSchema(Schema):
     domain = fields.String(
         required=True,
@@ -33,9 +38,6 @@ app.config["API_TITLE"] = "Scraper API"
 app.config["API_VERSION"] = "v1"
 app.config["OPENAPI_VERSION"] = "3.0.3"
 app.config["OPENAPI_URL_PREFIX"] = "/api"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///urls.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db.init_app(app)
 api = Api(app)
 api.spec.components.security_scheme(
     "BearerAuth",
@@ -49,7 +51,6 @@ app.config["OPENAPI_URL_PREFIX"] = "/api"
 app.config["OPENAPI_SWAGGER_UI_PATH"] = "/swagger-ui"
 app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
 blp = Blueprint("scraper", "scraper", url_prefix="/api")
-from flask_swagger_ui import get_swaggerui_blueprint
 SWAGGER_URL = "/swagger"
 API_URL = "/api/openapi.json"
 swaggerui_blueprint = get_swaggerui_blueprint(
@@ -116,24 +117,13 @@ def getScrap(data):
     if not url_segura(domain):
         return {"error": "URL no segura"}, 400
     urls_con_timestamp = scrapear(domain)
-    registros = []
-    for item in urls_con_timestamp:
-        registros.append(
-            UrlScrape(
-                domain=domain,
-                url=item["url"],
-                timestamp=datetime.fromisoformat(item["timestamp"]),
-            )
-        )
-    db.session.add_all(registros)
-    db.session.commit()
+    guardar_urls(domain, urls_con_timestamp)
     return {
         "domain": domain,
         "total_urls": len(urls_con_timestamp),
         "urls": [item["url"] for item in urls_con_timestamp],
     }
 api.register_blueprint(blp)
-with app.app_context():
-    db.create_all()
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

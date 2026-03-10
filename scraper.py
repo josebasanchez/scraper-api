@@ -3,11 +3,54 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse, urlunparse
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import mysql.connector
+
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 TIMEOUT = 10
 session = requests.Session()
 session.headers.update(HEADERS)
 
+def guardar_urls(domain, urls):
+
+    conn = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="scraper-api"
+    )
+
+    cursor = conn.cursor()
+
+    sql = """
+    INSERT INTO urls (domain, tipo, url, timestamp)
+    VALUES (%s,%s,%s,%s)
+    """
+
+    valores = [(domain, u["url"], u["tipo"], u["timestamp"]) for u in urls]
+
+    cursor.executemany(sql, valores)
+
+    conn.commit()
+    conn.close()
+def detectar_tipo(url):
+    url = url.lower()
+
+    if url.endswith((".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg")):
+        return "imagen"
+
+    if url.endswith(".pdf"):
+        return "pdf"
+
+    if url.endswith((".zip", ".rar", ".7z")):
+        return "archivo"
+
+    if url.endswith((".mp4", ".webm", ".avi")):
+        return "video"
+
+    if url.endswith((".js", ".css")):
+        return "recurso"
+
+    return "html"
 def normalizar(url):
     p = urlparse(url)
     return urlunparse((p.scheme, p.netloc, p.path.rstrip("/"), p.params, p.query, ""))
@@ -51,6 +94,7 @@ def scrapear(base_url, max_workers=50):
                     visitadas.add(url_base_n)
                     resultado.append({
                         "url": url_base_n,
+                        "tipo": detectar_tipo(url_base_n),
                         "timestamp": datetime.now(timezone.utc).isoformat()
                     })
                 try:
