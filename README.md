@@ -7,6 +7,7 @@ API para scrapear URLs internas de un dominio y guardar los resultados en SQLite
 ## 🔹 Requisitos
 
 - Python 3.10+
+- MySQL o MariaDB
 - Pip
 - Dependencias (instalar con `pip install -r requirements.txt`)
 
@@ -129,9 +130,17 @@ curl -X POST http://localhost:5000/api/getScrap \
 
 ## 🔹 Base de datos
 
-- SQLite: `urls.db`
-- Tabla `UrlScrape`:
-  - `domain` (string)
-  - `url` (string)
-  - `timestamp` (datetime)
+- Motor: **MySQL / MariaDB**
+- Base de datos: `scraper_api`  
+- Tabla `urls`:
 
+| Columna     | Tipo             | Descripción                        |
+|------------|----------------|-----------------------------------|
+| id         | INT AUTO_INCREMENT | PK                             |
+| domain     | VARCHAR(255)    | Dominio del que se scrapearon URLs |
+| url        | TEXT            | URL encontrada                    |
+| tipo       | VARCHAR(20)     | Tipo de URL (`html`, `imagen`, etc.) |
+| timestamp  | DATETIME        | Momento en que se descubrió la URL |
+| UNIQUE     | domain + url    | Evita duplicados en una misma búsqueda |
+
+> Las URLs se insertan solo una vez por búsqueda, pero pueden repetirse en búsquedas distintas.
