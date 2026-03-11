@@ -137,10 +137,9 @@ curl -X POST http://localhost:5000/api/getScrap \
 | Columna     | Tipo             | Descripción                        |
 |------------|----------------|-----------------------------------|
 | id         | INT AUTO_INCREMENT | PK                             |
-| domain     | VARCHAR(255)    | Dominio del que se scrapearon URLs |
-| url        | TEXT            | URL encontrada                    |
+| domain     | VARCHAR(255)    | Dominio del que se scrapearon URLs (*indexado*) |
 | tipo       | VARCHAR(20)     | Tipo de URL (`html`, `imagen`, etc.) |
+| url        | TEXT            | URL encontrada                    |
 | timestamp  | DATETIME        | Momento en que se descubrió la URL |
-| UNIQUE     | domain + url    | Evita duplicados en una misma búsqueda |
 
 > Las URLs se insertan solo una vez por búsqueda, pero pueden repetirse en búsquedas distintas.
