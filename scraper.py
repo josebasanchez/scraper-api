@@ -10,6 +10,17 @@ TIMEOUT = 10
 session = requests.Session()
 session.headers.update(HEADERS)
 
+def build_url_items(domain, urls):
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    items = []
+    for u in urls:
+        items.append({
+            "url": normalizar(u),
+            "tipo": detectar_tipo(u),
+            "timestamp": ts
+        })
+    return items
+
 def guardar_urls(domain, urls):
 
     conn = mysql.connector.connect(
@@ -105,19 +116,25 @@ def post_check_url(url, domain):
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
         _ = soup.title.string.strip() if soup.title and soup.title.string else ""
+        urls = set()
+        for a in soup.find_all("a", href=True):
+            href = a["href"].strip()
+            if href.startswith(("mailto:", "tel:")):
+                continue
+            url_abs = urljoin(url, href)
+            if misma_web(url_abs, domain):
+                urls.add(normalizar(url_abs))
         ok = True
         status_code = r.status_code
     except Exception as ex:
         ok = False
         status_code = None
-    item = {
-        "url": normalizar(url),
-        "tipo": detectar_tipo(url),
-        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    }
-    guardar_urls(domain, [item])
+    if ok:
+        items = build_url_items(domain, urls)
+        if items:
+            guardar_urls(domain, items)
     return {
-        "url": item["url"],
+        "url": normalizar(url),
         "ok": ok,
         "status_code": status_code
     }

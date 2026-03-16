@@ -2,7 +2,7 @@ from flask import Flask, request
 from flask_smorest import Api, Blueprint
 from flask_swagger_ui import get_swaggerui_blueprint
 from urllib.parse import urlparse
-from scraper import scrapear, scrapear_pagina, post_check_url, misma_web
+from scraper import scrapear, scrapear_pagina, post_check_url, misma_web, build_url_items
 from datetime import datetime
 from marshmallow import Schema, fields
 from auth import login, verificar_token
@@ -165,6 +165,9 @@ def getLinks(data):
     if not url_segura(domain):
         return {"error": "URL no segura"}, 400
     urls = scrapear_pagina(domain)
+    items = build_url_items(domain, urls)
+    if items:
+        guardar_urls(domain, items)
     return {
         "domain": domain,
         "total_urls": len(urls),
