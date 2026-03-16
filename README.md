@@ -1,145 +1,86 @@
 # Scraper API
 
-API para scrapear URLs internas de un dominio y guardar los resultados en SQLite. Incluye autenticación JWT con OAuth2 Password Flow y documentación Swagger.
+API para scrapear URLs internas y guardar resultados en MySQL. Incluye autenticacion JWT con OAuth2 Password Flow y Swagger.
 
----
-
-## 🔹 Requisitos
+## Requisitos
 
 - Python 3.10+
 - MySQL o MariaDB
 - Pip
-- Dependencias (instalar con `pip install -r requirements.txt`)
 
----
+## Instalacion
 
-## 🔹 Instalación
-
-```bash
-git clone https://github.com/josebasanchez/scraper-api
-cd scraper-api
+```
 pip install -r requirements.txt
 ```
 
----
+## Ejecucion
 
-## 🔹 Ejecución
-
-```bash
+```
 python app.py
 ```
 
-La API estará disponible en:
+API en `http://localhost:5000/api`
+Swagger en `http://localhost:5000/swagger`
 
-- API: `http://localhost:5000/api`
-- Swagger UI: `http://localhost:5000/swagger`
+## Endpoints
 
----
+### Token
 
-## 🔹 Endpoints principales
+**POST** `/api/token`
 
-### 1. Obtener token (OAuth2 Password Flow)
+Form-data:
 
-**POST** `/api/token`  
+- `username`
+- `password`
 
-**Parámetros (form-data):**
+### Scrapeo recursivo (original)
 
-| Campo     | Descripción            | Ejemplo      |
-|-----------|-----------------------|-------------|
-| username  | Usuario válido         | admin       |
-| password  | Contraseña del usuario | admin123    |
+**POST** `/api/getScrap`
 
-**Respuesta:**
+Body:
 
 ```json
-{
-  "access_token": "<JWT_TOKEN>",
-  "token_type": "bearer"
-}
+{ "domain": "https://www.innotu.com" }
 ```
 
-**Ejemplo con curl:**
+### Enlaces de una sola pagina (sin recursion)
 
-```bash
-curl -X POST http://localhost:5000/api/token \
-  -d "username=admin&password=admin123"
-```
+**POST** `/api/getLinks`
 
----
-
-### 2. Scrapeo de URLs
-
-**POST** `/api/getScrap`  
-
-**Headers:**
-
-```
-Authorization: Bearer <JWT_TOKEN>
-Content-Type: application/json
-```
-
-**Body:**
+Body:
 
 ```json
-{
-  "domain": "https://www.innotu.com"
-}
+{ "domain": "https://www.innotu.com" }
 ```
 
-**Respuesta:**
+### POST y guardar en base de datos
+
+**POST** `/api/postCheck`
+
+Body:
 
 ```json
 {
   "domain": "https://www.innotu.com",
-  "total_urls": 99,
-  "urls": [
-    "https://www.innotu.com/",
-    "https://www.innotu.com/contact",
-    "https://www.innotu.com/blog"
-  ]
+  "url": "https://www.innotu.com/contact"
 }
 ```
 
-**Ejemplo con curl:**
+## Seguridad
 
-```bash
-curl -X POST http://localhost:5000/api/getScrap \
-  -H "Authorization: Bearer <JWT_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"domain":"https://www.innotu.com"}'
-```
+- JWT obligatorio en `Authorization: Bearer <token>`
+- Token dura 1 hora
+- Credenciales por defecto: `admin/admin123`
 
----
+## Base de datos
 
-## 🔹 Swagger UI
+- Base: `scraper_api`
+- Tabla: `urls`
+- Unico por dominio+url para evitar duplicados
 
-1. Accede a `http://localhost:5000/swagger`
-2. Haz clic en **Authorize** e introduce tu token obtenido de `/api/token`.
-3. Ejecuta `getScrap` desde la UI con el token válido.
+## Integracion con VerSitemap
 
-
----
-
-## 🔹 Seguridad
-
-- La API requiere token JWT en el header `Authorization` para `/getScrap`.
-- Tokens caducan en 1 hora.
-- Las credenciales están hardcodeadas (`admin/admin123`). Se pueden reemplazar por una base de datos de usuarios en producción.
-
----
-
-## 🔹 Base de datos
-
-- Motor: **MySQL / MariaDB**
-- Base de datos: `scraper_api`  
-- Tabla `urls`:
-
-| Columna     | Tipo             | Descripción                        |
-|------------|----------------|-----------------------------------|
-| id         | INT AUTO_INCREMENT | PK                             |
-| domain     | VARCHAR(255)    | Dominio del que se scrapearon URLs (*indexado*) |
-| tipo       | VARCHAR(20)     | Tipo de URL (`html`, `imagen`, etc.) |
-| url        | TEXT            | URL encontrada                    |
-| timestamp  | DATETIME        | Momento en que se descubrió la URL |
-
-> Las URLs se insertan solo una vez por búsqueda, pero pueden repetirse en búsquedas distintas.
+1. Ejecuta `python app.py`
+2. En VerSitemap configura `ScraperApi:BaseUrl`
+3. El front usa `getLinks` y `postCheck`

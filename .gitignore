@@ -1,39 +1,8 @@
-# Python
 __pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.pycache/
-*.pyd
-
-# Virtualenv
+*.pyc
 .venv/
 env/
 venv/
-ENV/
-
-# Database
-*.db
-*.sqlite3
-
-# VSCode
-.vscode/
-
-# PyCharm
-.idea/
-
-# Docker
-*.log
-*.pid
-
-# OS
+.env
 .DS_Store
-Thumbs.db
-
-# Python packages
-*.egg-info/
-dist/
-build/
-.eggs/
-
-notas.txt
+*.log

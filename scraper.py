@@ -22,7 +22,7 @@ def guardar_urls(domain, urls):
     cursor = conn.cursor()
 
     sql = """
-    INSERT INTO urls (domain, tipo, url, timestamp)
+    INSERT IGNORE INTO urls (domain, tipo, url, timestamp)
     VALUES (%s,%s,%s,%s)
     """
 
@@ -78,6 +78,49 @@ def extraer_urls(url, base_url):
         if misma_web(url_abs, base_url):
             urls.add(normalizar(url_abs))
     return urls
+
+def extraer_urls_pagina(url, base_url):
+    urls = set()
+    try:
+        r = session.get(url, timeout=TIMEOUT)
+        r.raise_for_status()
+    except:
+        return urls
+    soup = BeautifulSoup(r.text, "html.parser")
+    for a in soup.find_all("a", href=True):
+        href = a["href"].strip()
+        if href.startswith(("mailto:", "tel:")):
+            continue
+        url_abs = urljoin(url, href)
+        if misma_web(url_abs, base_url):
+            urls.add(normalizar(url_abs))
+    return urls
+
+def scrapear_pagina(base_url):
+    return sorted(list(extraer_urls_pagina(base_url, base_url)))
+
+def post_check_url(url, domain):
+    try:
+        r = session.post(url, timeout=TIMEOUT)
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, "html.parser")
+        _ = soup.title.string.strip() if soup.title and soup.title.string else ""
+        ok = True
+        status_code = r.status_code
+    except Exception as ex:
+        ok = False
+        status_code = None
+    item = {
+        "url": normalizar(url),
+        "tipo": detectar_tipo(url),
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    }
+    guardar_urls(domain, [item])
+    return {
+        "url": item["url"],
+        "ok": ok,
+        "status_code": status_code
+    }
 def scrapear(base_url, max_workers=50):
     visitadas = set()
     pendientes = set([base_url])
